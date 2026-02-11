@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@mysql/xdevapi": "^8.0.35",
+    "express": "^5.2.1",
+    "express-session": "^1.18.2",
+    "https": "^1.0.0",
+    "redis": "^5.10.0"
+  }
+}

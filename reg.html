@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用户注册</title>
+  <style>
+    body {
+      font-family: Roboto, sans-serif;
+      background: #f1f3f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      width: 360px;
+      background: white;
+      padding: 40px 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 14px;
+      color: #5f6368;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: calc(100% - 24px);
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #1a73e8;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .slide-wrapper {
+      display: flex;
+      width: 1080px;
+      transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .panel {
+      width: 360px;
+      flex-shrink: 0;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: #5f6368;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div id="slider" class="slide-wrapper">
+
+    <!-- 邮箱注册 -->
+    <div class="panel" id="email-panel">
+      <h2>创建帐号</h2>
+      <p>使用邮箱注册(Our IP is banned by Outlook😟)</p>
+      <input id="reg-email" type="email" placeholder="邮箱地址" />
+      <p></p>
+      <button onclick="sendCode()">发送验证码</button>
+      <div id="email-msg" class="hint"></div>
+    </div>
+
+    <!-- 验证码 -->
+    <div class="panel" id="code-panel" style="opacity:0; visibility:hidden; pointer-events:none;">
+      <h2>验证邮箱</h2>
+      <p id="show-email"></p>
+      <input id="code" type="text" placeholder="邮箱验证码" />
+      <button onclick="verifyCode()">下一步</button>
+      <div id="code-msg" class="hint"></div>
+    </div>
+
+    <!-- 设置密码 -->
+    <div class="panel" id="password-panel" style="opacity:0; visibility:hidden; pointer-events:none;">
+      <h2>设置密码</h2>
+      <p>用于以后登录</p>
+      <input id="password1" type="password" placeholder="输入密码" />
+      <input id="password2" type="password" placeholder="确认密码" />
+      <button onclick="finishRegister()">完成注册</button>
+      <div id="password-msg" class="hint"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function sendCode() {
+    const email = document.getElementById('reg-email').value.trim();
+    if (!email) return;
+
+    document.getElementById('show-email').innerText = email;
+
+    // 示例：向服务器请求发送验证码
+    fetch('/api/send_code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.code === 210){
+        return document.getElementById('email-msg').innerText = '邮箱已存在';
+      } else if(data.code === 335) {
+        return document.getElementById('email-msg').innerText = '1分钟后再试';
+      }
+      document.getElementById('email-msg').innerText = data.message || '验证码已发送';
+
+      const panel = document.getElementById('code-panel');
+      panel.style.transition = 'opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1)';
+      panel.style.opacity = '1';
+      panel.style.visibility = 'visible';
+      panel.style.pointerEvents = 'auto';
+
+      // 隐藏邮箱输入界面
+      const panel1 = document.getElementById('email-panel');
+      panel1.style.transition = 'opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1)';
+      panel1.style.opacity = '0';
+      panel1.style.pointerEvents = 'none';
+      panel1.style.visibility = 'hidden';
+
+      document.getElementById('slider').style.transform = 'translateX(-360px)';
+    })
+    .catch(() => {
+      document.getElementById('email-msg').innerText = '服务器错误';
+    });
+  }
+
+  function verifyCode() {
+    const email = document.getElementById('reg-email').value.trim();
+    const code = document.getElementById('code').value.trim();
+
+    fetch('/api/verify_code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.code === 1){
+        document.getElementById('code-msg').innerText = '验证码错误';
+        return;
+      } else if(data.code === 2) {
+        document.getElementById('code-msg').innerText = 'IP被锁定，五分钟后再试';
+        return;
+      }
+      document.getElementById('code-msg').innerText = data.message || '验证成功';
+
+      const pwdPanel = document.getElementById('password-panel');
+      pwdPanel.style.opacity = '1';
+      pwdPanel.style.visibility = 'visible';
+      pwdPanel.style.pointerEvents = 'auto';
+
+      // 隐藏验证码输入界面
+      const panel1 = document.getElementById('code-panel');
+      panel1.style.transition = 'opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1)';
+      panel1.style.opacity = '0';
+      panel1.style.pointerEvents = 'none';
+      panel1.style.visibility = 'hidden';
+
+      document.getElementById('slider').style.transform = 'translateX(-720px)';
+    })
+    .catch(() => {
+      document.getElementById('code-msg').innerText = '验证失败';
+    });
+  }
+function finishRegister() {
+    const email = document.getElementById('reg-email').value.trim();
+    const p1 = document.getElementById('password1').value;
+    const p2 = document.getElementById('password2').value;
+    const code = document.getElementById('code').value.trim();
+
+  if (!p1 || p1 !== p2) {
+      document.getElementById('password-msg').innerText = '两次密码不一致';
+      return;
+    }
+
+    fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: p1, code})
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('password-msg').innerText = data.message || '注册成功';
+      window.location.href = '/'
+    })
+    .catch(() => {
+      document.getElementById('password-msg').innerText = '注册失败';
+    });
+  }
+
+</script>
+</body>
+</html>

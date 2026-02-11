@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>信息浏览界面</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --border: #e0e0e0;
+      --text: #202124;
+      --subtext: #5f6368;
+      --primary: #1a73e8;
+      --hover: #e8f0fe;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .layout {
+      display: block;
+      height: 100vh;
+    }
+
+    /* 侧栏 */
+    .sidebar {
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      padding: 16px 12px;
+    }
+
+    .sidebar h1 {
+      font-size: 18px;
+      margin: 48px 12px 16px;
+      font-weight: 600;
+    }
+
+    /* 用户下拉菜单 */
+    .user-menu {
+      position: relative;
+    }
+
+    .user-menu.top-right {
+      position: absolute;
+      top: 16px;
+      right: 24px;
+    }
+
+    .user-trigger {
+      position: relative;
+      margin: 0 8px 8px;
+    }
+
+    .user-trigger {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .user-trigger:hover {
+      background: var(--hover);
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 44px;
+      right: 0;
+      width: 120px; /* 收窄下拉框宽度 */
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      display: none;
+      z-index: 10;
+    }
+
+    .user-item {
+      padding: 10px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .user-item:hover {
+      background: var(--hover);
+    }
+
+    .user-item.logout {
+      color: #c5221f;
+    }
+
+    .nav-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item.active,
+    .nav-item:hover {
+      background: var(--hover);
+      color: var(--primary);
+    }
+
+    /* 主内容 */
+    .content {
+      padding: 24px;
+      overflow: auto;
+    }
+
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .content-header h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .search {
+      padding: 8px 12px;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      width: 240px;
+    }
+
+    /* 表格卡片 */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      padding: 8px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead {
+      background: #f1f3f4;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      font-weight: 500;
+      color: var(--subtext);
+    }
+
+    tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    .status {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      display: inline-block;
+    }
+
+    .status.ok {
+      background: #e6f4ea;
+      color: #137333;
+    }
+
+    .status.warn {
+      background: #fef7e0;
+      color: #b06000;
+    }
+
+    .status.err {
+      background: #fce8e6;
+      color: #c5221f;
+    }
+
+    /* 隐藏 */
+    .hidden {
+      display: none;
+    }
+
+    /* 弹窗整体 */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+    }
+
+    /* 遮罩层 */
+    .modal-mask {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    /* 弹窗卡片 */
+    .modal-card {
+      position: relative;
+      width: 360px;
+      margin: 120px auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    /* 输入框 */
+    .modal-card input {
+      width: 100%;
+      padding: 10px 12px;
+      margin-top: 12px;
+      border-radius: 8px;
+      border: 1px solid #dadce0;
+      font-size: 14px;
+    }
+
+    /* 按钮区 */
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+      gap: 12px;
+    }
+
+    .btn-text {
+      background: none;
+      border: none;
+      color: #5f6368;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #1a73e8;
+      border: none;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- 主内容区 -->
+    <main class="content">
+      <div class="content-header">
+        <div class="user-menu top-right">
+          <div class="user-trigger" id="userTrigger">👤 当前用户</div>
+          <div class="user-dropdown" id="userDropdown">
+            <div class="user-item" id="changePwdBtn">修改密码</div>
+            <div class="user-item logout" id="logoutBtn">退出登录</div>
+          </div>
+        </div>
+        <h2 id="title">设备列表</h2>
+        
+      </div>
+      <!-- 修改密码弹窗 -->
+      <div id="passwordModal" class="modal hidden">
+        <div class="modal-mask"></div>
+
+        <div class="modal-card">
+          <h3>修改密码</h3>
+
+          <input id="oldPwd" type="password" placeholder="原密码" />
+          <input id="newPwd" type="password" placeholder="新密码" />
+          <input id="confirmPwd" type="password" placeholder="确认新密码" />
+          <div id="chpass-msg" class="hint"></div>
+
+          <div class="modal-actions">
+            <button id="cancelPwd" class="btn-text">取消</button>
+            <button id="submitPwd" class="btn-primary">确认修改</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        
+        <table id="deviceTable">
+          <thead>
+            <tr>
+              <th>设备ID</th>
+              <th>设备名称</th>
+              <th>IP</th>
+              <th>最近同步</th>
+            </tr>
+          </thead>
+          <tbody id="deviceTableBody">
+            <!--自动填充-->
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script>
+    // 右上角用户下拉菜单逻辑（普通用户界面）
+    const trigger = document.getElementById('userTrigger');
+    const dropdown = document.getElementById('userDropdown');
+
+    // 退出登录
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      const res = await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (res.ok) {
+        window.location.href = '/';
+      }
+    });
+
+    async function chpass() {
+      const oldPwd = document.getElementById('oldPwd').value;
+      const newPwd = document.getElementById('newPwd').value;
+      const confirmPwd = document.getElementById('confirmPwd').value;
+
+      if (newPwd !== confirmPwd) {
+        document.getElementById('chpass-msg').innerText = '两次输入的新密码不一致'
+        return;
+      }
+
+      const res = await fetch('/api/chpass', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',   // ⭐ 很重要：让浏览器带上 cookie
+        body: JSON.stringify({
+          oldPwd,
+          newPwd
+        })
+      })
+      const data = await res.json()
+
+      if (!data.success) {
+        if(data.code === 1) {
+          document.getElementById('chpass-msg').innerText = '用户名或密码错误';
+        } else {
+          document.getElementById('chpass-msg').innerText = '当前IP被锁定，5分钟后再试';
+        }
+      } else {
+        const res = await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        if (res.ok) {
+          window.location.href = '/';
+        }
+      }
+    }
+
+    // 修改密码弹窗逻辑
+    document.addEventListener('DOMContentLoaded', () => {
+      const pwdModal = document.getElementById('passwordModal');
+
+      document.getElementById('changePwdBtn').onclick = () => {
+        pwdModal.classList.remove('hidden');
+      };
+
+      document.getElementById('cancelPwd').onclick = () => {
+        pwdModal.classList.add('hidden');
+      };
+
+      document.getElementById('submitPwd').onclick = () => {
+        chpass();
+      };
+    });
+
+    async function loadDevices() {
+      try {
+        const res = await fetch('/api/devices', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          //credentials: 'include' // 如果使用 cookie/session
+        });
+
+        if (!res.ok) {
+          throw new Error('服务器响应失败');
+        }
+
+        const data = await res.json();
+        // 期望 data 格式：
+        // [{ id, name, status, lastSeen }]
+        console.log(data);
+
+        const tbody = document.getElementById('deviceTableBody');
+        tbody.innerHTML = '';
+
+        var index = 1;
+        data.forEach(data => {
+          const tr = document.createElement('tr');
+
+          tr.innerHTML = `
+          <td>${index}</td>
+          <td>${data.name}</td>
+          <td>${data.ip}</td>
+          <td>${data.update_time}</td>
+        `;
+
+          tbody.appendChild(tr);
+          index+=1;
+        });
+      } catch (err) {
+        console.error(err);
+        alert('获取设备列表失败');
+      }
+    }
+
+    loadDevices();
+
+    if (trigger && dropdown) {
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+      });
+
+      document.addEventListener('click', () => {
+        dropdown.style.display = 'none';
+      });
+    }
+  </script>
+</body>
+</html>

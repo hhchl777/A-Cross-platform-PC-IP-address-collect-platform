@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>服务器管理平台</title>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f1f3f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      width: 360px;
+      background: white;
+      padding: 40px 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      position: relative;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 14px;
+      color: #5f6368;
+      margin-bottom: 20px;
+    }
+
+    .input-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input {
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    input:focus {
+      border-color: #1a73e8;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .slide-wrapper {
+      display: flex;
+      width: 720px; /* 两个页面 360 + 360 */
+      transform: translateX(0);
+      transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .panel {
+      width: 360px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="slider" class="slide-wrapper">
+
+      <!-- 邮箱界面 -->
+      <div class="panel">
+        <h2>服务器管理界面登录</h2>
+        <p>请输入您的用户名</p>
+        <div class="input-box">
+          <input id="email" type="email" placeholder="邮箱" />
+          <button onclick="nextStep()">下一步</button>
+          <p></p>
+          <button style="margin-bottom:15px; background:#e8eaed; color:#3c4043;" onclick="reg()">没有账号?点击注册</button>
+          <a href="https://sserver.vanillapudding.link/download/70124/winclient">Win10客户端(证书导入至“受信任人”存储)</a>
+          <p></p>
+          <a href="https://sserver.vanillapudding.link/download/79958/unixclient">Ubuntu客户端</a>
+        </div>
+      </div>
+
+      <!-- 密码界面 -->
+      <div class="panel" id="password-panel" style="opacity:0; visibility:hidden; pointer-events:none;">
+        <h2>欢迎回来</h2>
+        <p id="email-display"></p>
+        <div class="input-box">
+          <input id="password" type="password" placeholder="密码" />
+          <button style="margin-bottom:15px; background:#e8eaed; color:#3c4043;" onclick="goBack()">返回修改邮箱</button>
+          <button onclick="login()">登录</button>
+          <div id="login-msg" class="hint"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function nextStep() {
+      const email = document.getElementById('email').value.trim();
+      if (!email) return;
+
+      document.getElementById('email-display').innerText = email;
+
+      // 显示密码界面
+      const pwdPanel = document.getElementById('password-panel');
+      pwdPanel.style.transition = 'opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1)';
+      pwdPanel.style.opacity = '1';
+      pwdPanel.style.visibility = 'visible';
+      pwdPanel.style.pointerEvents = 'auto';
+
+      // 隐藏邮箱输入界面
+      const panel1 = document.querySelectorAll('.panel')[0];
+      panel1.style.transition = 'opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1)';
+      panel1.style.opacity = '0';
+      panel1.style.pointerEvents = 'none';
+      panel1.style.visibility = 'hidden';
+      
+      document.getElementById('slider').style.transform = 'translateX(-360px)';
+    }
+
+    function goBack() {
+      // 显示第一页
+      const panel1 = document.querySelectorAll('.panel')[0];
+      panel1.style.opacity = '1';
+      panel1.style.visibility = 'visible';
+      panel1.style.pointerEvents = 'auto';
+
+      // 隐藏第二页
+      const pwdPanel = document.getElementById('password-panel');
+      pwdPanel.style.opacity = '0';
+      pwdPanel.style.visibility = 'hidden';
+      pwdPanel.style.pointerEvents = 'none';
+
+      // 滑动回第一页
+      document.getElementById('slider').style.transform = 'translateX(0)';
+    }
+
+    async function login() {
+      const email = document.getElementById('email').value
+      const password = document.getElementById('password').value
+
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',   // ⭐ 很重要：让浏览器带上 cookie
+        body: JSON.stringify({
+          email,
+          password
+        })
+      })
+
+      const data = await res.json()
+
+      if (!data.success) {
+        if(data.code === 1) {
+          document.getElementById('login-msg').innerText = '用户名或密码错误';
+        } else {
+          document.getElementById('login-msg').innerText = '当前IP被锁定，5分钟后再试';
+        }
+      } else if (data.node === 1){
+          window.location.href = '/admin';
+      } else {
+          window.location.href = '/user';
+      }
+    }
+
+    async function reg() {
+      const res = await fetch('/register', {
+        method: 'GET'
+      });
+      window.location.href = res.url;
+    }
+  </script>
+</body>
+</html>
